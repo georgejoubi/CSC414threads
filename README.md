@@ -43,7 +43,12 @@ by editing this file (no more that a few lines)
 
 #### Answer
 
-_write your answer here_
+In the example code, we are using a mutex to give exclusive access to our common data which is x and y.
+The lock_guard gives lets us create a lock on the mutex which is unlocked for us when the object is destroyed.
+First, the lock_guard acts as a wait or a lock on the mutex, and tries to acquire access on it. When it does get
+access it enters the code block we want and when the code is done the lock_guard is destroyed.
+This happens when we get out of the scope of the function, the lock_guard destructor gets called and the mutex
+is released. 
 
 ## Part 2
 
@@ -52,7 +57,13 @@ _write your answer here_
 What is the difference between ``` std::mutex ``` and ``` std::shared_mutex ```?
 Write your answer below
 #### Answer
-_write your answer here_
+
+The std::shared_mutex acts very similar to a regular mutex except it has the option to give multiple threads access
+to the shared resources at the same time. For example, there is no harm in multiple threads reading the resources,
+however we only want one thread to write exclusively. We can do this by creating a shared_lock on the threads that 
+read the data, thus giving access to all reader threads at the same time, however we give a unique_lock on the
+threads that we want to have exclusive access, which in this example are writing threads, and this gives access
+to only one thread while letting the others wait.
 
 ### Implementation
 
@@ -68,7 +79,12 @@ Describe condition variables in C++ and how they used (a few lines)
 
 #### Answer
 
-_write your answer here_
+Condition variables are a class in the c++ standard library used to block and resume threads based on a certain
+condition. Condition variables need a mutex to work on, we pass the mutex to the condition variable object and it
+will lock it when we call the wait on it. It will unblock the mutex when we call the notify function on it from
+a different thread. We also pass it a condition called a predicate, which will be checked when the condition variable
+is notified from a different thread. It will check the predicate, if it is true then the mutex will be locked and
+the thread will proceed. If the predicate is false it will block and wait for another notify.
 
 ### Implementation 
 
