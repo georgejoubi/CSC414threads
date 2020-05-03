@@ -8,14 +8,17 @@
 #include <mutex>
 #include <chrono>
 #include <shared_mutex>
+#define SYNC
+
+std::shared_mutex m;
 
 std::random_device e;
-std::uniform_int_distribution<> dist(1,9);
+std::uniform_int_distribution<> dist(1, 9);
 std::vector<int> v;
 #define DATA_SIZE 100
 #define NUM_TRIALS 10
 
-/* Readers writer setup. The common data is the 
+/* Readers writer setup. The common data is the
  * vector of integers v. The writers write a random
  * value from 1 to 9 and the next its negative such
  * that the total sum is 0. for example
@@ -23,30 +26,36 @@ std::vector<int> v;
  * The readers check that the sum in the vector is zero
  * if not it will print the sum (which means data is corrupted)
  */
-/* You must not remove any of the code below. ADD to it sync
- * primites so it works. Basically using c++ to implement the
- * solution we saw in class (it is in the lecture notes)
- */
+ /* You must not remove any of the code below. ADD to it sync
+  * primites so it works. Basically using c++ to implement the
+  * solution we saw in class (it is in the lecture notes)
+  */
 class Reader {
 public:
     static int num;
     void operator() () {
         int sum = 0;
+#ifdef SYNC
+        std::shared_lock<std::shared_mutex> lock(m);
+#endif // SYNC
         for (auto x : v) {
             sum += x;
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
-        if(sum!=0) std::cout<< "sum is " << sum << std::endl;
+        if (sum != 0) std::cout << "sum is " << sum << std::endl;
     }
 };
 
 class Writer {
-   
+
 public:
     Writer() {
-   }
+    }
     void operator() () {
         int value = dist(e);
+#ifdef SYNC
+        std::unique_lock<std::shared_mutex> lock(m);
+#endif // SYNC
 
         for (auto& x : v) {
             x = value;
@@ -66,7 +75,7 @@ int main()
     for (int i = 0; i < NUM_TRIALS; i++) {
         std::cout << "Trial " << i << std::endl;
         std::vector<std::thread> mythreads;
-        for(int i=0;i<5;i++){
+        for (int i = 0; i < 5; i++) {
             Reader r1, r2;
             Writer w;
             std::thread t1(r1);
@@ -76,10 +85,10 @@ int main()
             mythreads.push_back(std::move(t2));
             mythreads.push_back(std::move(t3));
         }
-       for (auto& t : mythreads)
+        for (auto& t : mythreads)
             t.join();
         std::cout << "----------------" << std::endl;
     }
-    
-   
+
+
 }
